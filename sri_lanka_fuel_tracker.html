@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sri Lanka Fuel Tracker — Weekly Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --fuel-green: #1D9E75;
+    --fuel-green-light: #E1F5EE;
+    --fuel-green-dark: #085041;
+    --fuel-amber: #BA7517;
+    --fuel-amber-light: #FAEEDA;
+    --fuel-red: #A32D2D;
+    --fuel-red-light: #FCEBEB;
+    --color-bg: #ffffff;
+    --color-bg-secondary: #F1EFE8;
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #5F5E5A;
+    --color-text-tertiary: #888780;
+    --color-border: rgba(0,0,0,0.12);
+    --color-border-secondary: rgba(0,0,0,0.2);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1a1a18;
+      --color-bg-secondary: #242420;
+      --color-text-primary: #f0ede8;
+      --color-text-secondary: #a0998e;
+      --color-text-tertiary: #6a6460;
+      --color-border: rgba(255,255,255,0.1);
+      --color-border-secondary: rgba(255,255,255,0.18);
+      --fuel-green-light: #0a2e22;
+      --fuel-amber-light: #2a1e08;
+      --fuel-red-light: #2a0e0e;
+    }
+  }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 640px; margin: 0 auto; }
+  .header-zone { text-align: center; margin-bottom: 2rem; }
+  .brand { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--color-text-tertiary); text-transform: uppercase; margin-bottom: .5rem; }
+  .title { font-size: 26px; font-weight: 500; color: var(--color-text-primary); line-height: 1.3; }
+  .subtitle { font-size: 13px; color: var(--color-text-secondary); margin-top: .4rem; }
+  .input-zone { background: var(--color-bg-secondary); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1.5rem; border: 0.5px solid var(--color-border); }
+  .input-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 140px; }
+  .field label { font-size: 11px; font-family: 'Space Mono', monospace; letter-spacing: 1.5px; color: var(--color-text-secondary); display: block; margin-bottom: 6px; text-transform: uppercase; }
+  .plate-wrap { display: flex; align-items: center; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg); }
+  .plate-prefix { font-family: 'Space Mono', monospace; font-size: 13px; padding: 0 10px; color: var(--color-text-secondary); border-right: 0.5px solid var(--color-border); white-space: nowrap; line-height: 38px; }
+  .plate-input { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; letter-spacing: 2px; border: none; outline: none; padding: 0 12px; height: 38px; background: transparent; color: var(--color-text-primary); width: 110px; }
+  .plate-input::placeholder { font-weight: 400; letter-spacing: 1px; font-size: 13px; color: var(--color-text-tertiary); }
+  input[type="date"] { height: 38px; font-family: 'Sora', sans-serif; font-size: 13px; width: 100%; border-radius: var(--radius-md); border: 0.5px solid var(--color-border-secondary); padding: 0 10px; background: var(--color-bg); color: var(--color-text-primary); outline: none; }
+  .go-btn { height: 38px; padding: 0 22px; font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); background: var(--color-text-primary); color: var(--color-bg); transition: opacity .15s; white-space: nowrap; }
+  .go-btn:hover { opacity: .82; }
+  .status-banner { border-radius: var(--radius-lg); padding: 1rem 1.25rem; margin-bottom: 1.5rem; border: 0.5px solid; display: flex; align-items: center; gap: 12px; }
+  .status-banner.can { background: var(--fuel-green-light); border-color: #9FE1CB; }
+  .status-banner.cannot { background: var(--fuel-red-light); border-color: #F7C1C1; }
+  .status-banner.wait { background: var(--fuel-amber-light); border-color: #FAC775; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .can .status-dot { background: var(--fuel-green); }
+  .cannot .status-dot { background: var(--fuel-red); }
+  .wait .status-dot { background: var(--fuel-amber); }
+  .status-text { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .status-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+  .info-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .info-card { background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: .875rem 1rem; }
+  .info-card .lbl { font-size: 11px; font-family: 'Space Mono', monospace; letter-spacing: 1px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 6px; }
+  .info-card .val { font-size: 18px; font-weight: 500; color: var(--color-text-primary); font-family: 'Space Mono', monospace; }
+  .info-card .val-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+  .quota-bar-wrap { margin-bottom: 1.5rem; }
+  .quota-label { font-size: 11px; font-family: 'Space Mono', monospace; letter-spacing: 1.5px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 8px; }
+  .quota-track { height: 8px; background: var(--color-border); border-radius: 4px; overflow: hidden; }
+  .quota-fill { height: 100%; border-radius: 4px; background: var(--fuel-green); transition: width .4s ease; }
+  .quota-nums { display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; }
+  .quota-nums strong { color: var(--color-text-primary); font-weight: 500; }
+  .pump-row { display: flex; gap: 10px; align-items: flex-end; margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--color-border); }
+  .pump-field { flex: 1; }
+  .pump-field label { font-size: 10px; font-family: 'Space Mono', monospace; letter-spacing: 1px; color: var(--color-text-secondary); text-transform: uppercase; display: block; margin-bottom: 5px; }
+  .pump-input-wrap { display: flex; align-items: center; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg); }
+  .pump-input { font-family: 'Space Mono', monospace; font-size: 15px; font-weight: 700; border: none; outline: none; padding: 0 10px; height: 34px; background: transparent; color: var(--color-text-primary); width: 100%; }
+  .pump-input::placeholder { font-weight: 400; font-size: 12px; color: var(--color-text-tertiary); }
+  .pump-unit { font-family: 'Space Mono', monospace; font-size: 11px; padding: 0 10px; color: var(--color-text-secondary); border-left: 0.5px solid var(--color-border); line-height: 34px; }
+  .pump-btn { height: 34px; padding: 0 16px; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); background: var(--color-text-primary); color: var(--color-bg); white-space: nowrap; transition: opacity .15s; }
+  .pump-btn:hover { opacity: .82; }
+  .balance-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+  .bal-card { border-radius: var(--radius-md); padding: 8px 10px; border: 0.5px solid var(--color-border); background: var(--color-bg); }
+  .bal-lbl { font-size: 9px; font-family: 'Space Mono', monospace; letter-spacing: 1px; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .bal-val { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+  .bal-card.used .bal-val { color: var(--fuel-amber); }
+  .bal-card.remaining .bal-val { color: var(--fuel-green); }
+  .bal-card.remaining.empty .bal-val { color: var(--fuel-red); }
+  .week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .week-nav-lbl { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+  .nav-btn { border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); background: var(--color-bg-secondary); padding: 5px 12px; cursor: pointer; font-size: 13px; color: var(--color-text-secondary); font-family: 'Sora', sans-serif; }
+  .nav-btn:hover { background: var(--color-bg); }
+  .week-sub { font-size: 11px; color: var(--color-text-tertiary); font-family: 'Space Mono', monospace; margin-bottom: 10px; }
+  .week-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-bottom: 1.5rem; }
+  .day-card { border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 8px 4px; text-align: center; background: var(--color-bg); }
+  .day-card.active-fuel { border-color: #9FE1CB; background: var(--fuel-green-light); }
+  .day-card.today-card { border-width: 1.5px; }
+  .day-card.past { opacity: .45; }
+  .day-name { font-size: 9px; font-family: 'Space Mono', monospace; letter-spacing: 1px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+  .day-num { font-family: 'Space Mono', monospace; font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+  .day-card.active-fuel .day-num { color: var(--fuel-green-dark); }
+  .day-card.active-fuel .day-name { color: #0F6E56; }
+  .day-tag { font-size: 8px; margin-top: 4px; padding: 2px 4px; border-radius: 3px; font-family: 'Space Mono', monospace; letter-spacing: .5px; }
+  .day-card.active-fuel .day-tag { background: #9FE1CB; color: var(--fuel-green-dark); }
+  .today-label { font-size: 10px; color: var(--color-text-secondary); margin-top: 3px; font-family: 'Space Mono', monospace; }
+  .notice { font-size: 12px; color: var(--color-text-secondary); line-height: 1.7; padding: .75rem 1rem; border: 0.5px solid var(--color-border); border-radius: var(--radius-md); border-left: 2px solid var(--color-border-secondary); }
+  .notice strong { color: var(--color-text-primary); font-weight: 500; }
+  .hidden { display: none; }
+  .vehicle-zone { margin-bottom: 1.5rem; }
+  .vehicle-zone .zone-label { font-size: 11px; font-family: 'Space Mono', monospace; letter-spacing: 1.5px; color: var(--color-text-secondary); text-transform: uppercase; margin-bottom: 10px; }
+  .vehicle-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .v-card { border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 10px 8px; text-align: center; cursor: pointer; background: var(--color-bg); transition: border-color .15s, background .15s; user-select: none; }
+  .v-card:hover { border-color: var(--color-border-secondary); background: var(--color-bg-secondary); }
+  .v-card.selected { border: 1.5px solid #1D9E75; background: var(--fuel-green-light); }
+  .v-icon { font-size: 20px; margin-bottom: 4px; line-height: 1; }
+  .v-name { font-size: 10px; font-family: 'Space Mono', monospace; color: var(--color-text-secondary); line-height: 1.3; }
+  .v-card.selected .v-name { color: var(--fuel-green-dark); }
+  .v-quota { font-size: 12px; font-weight: 500; color: var(--color-text-tertiary); margin-top: 3px; font-family: 'Space Mono', monospace; }
+  .v-card.selected .v-quota { color: var(--fuel-green); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-zone">
+    <div class="brand">National Fuel Pass · QR System</div>
+    <div class="title">Weekly Fuel Planner</div>
+    <div class="subtitle">Sri Lanka odd/even number plate system · weekly quota by vehicle type</div>
+  </div>
+
+  <div class="vehicle-zone">
+    <div class="zone-label">Vehicle type</div>
+    <div class="vehicle-grid" id="vehicleGrid">
+      <div class="v-card selected" data-type="Motorcycles" data-quota="5" onclick="selectVehicle(this)">
+        <div class="v-icon">🏍</div>
+        <div class="v-name">Motorcycle</div>
+        <div class="v-quota">5 L</div>
+      </div>
+      <div class="v-card" data-type="Motor Cars" data-quota="15" onclick="selectVehicle(this)">
+        <div class="v-icon">🚗</div>
+        <div class="v-name">Motor Car</div>
+        <div class="v-quota">15 L</div>
+      </div>
+      <div class="v-card" data-type="Three-Wheelers" data-quota="15" onclick="selectVehicle(this)">
+        <div class="v-icon">🛺</div>
+        <div class="v-name">Three-Wheeler</div>
+        <div class="v-quota">15 L</div>
+      </div>
+      <div class="v-card" data-type="Quadricycles" data-quota="5" onclick="selectVehicle(this)">
+        <div class="v-icon">🚙</div>
+        <div class="v-name">Quadricycle</div>
+        <div class="v-quota">5 L</div>
+      </div>
+      <div class="v-card" data-type="Vans" data-quota="40" onclick="selectVehicle(this)">
+        <div class="v-icon">🚐</div>
+        <div class="v-name">Van</div>
+        <div class="v-quota">40 L</div>
+      </div>
+      <div class="v-card" data-type="Buses" data-quota="60" onclick="selectVehicle(this)">
+        <div class="v-icon">🚌</div>
+        <div class="v-name">Bus</div>
+        <div class="v-quota">60 L</div>
+      </div>
+      <div class="v-card" data-type="Motor Lorries" data-quota="200" onclick="selectVehicle(this)">
+        <div class="v-icon">🚛</div>
+        <div class="v-name">Motor Lorry</div>
+        <div class="v-quota">200 L</div>
+      </div>
+      <div class="v-card" data-type="Special Purpose" data-quota="40" onclick="selectVehicle(this)">
+        <div class="v-icon">🚜</div>
+        <div class="v-name">Special Purpose</div>
+        <div class="v-quota">40 L</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-zone">
+    <div class="input-row">
+      <div class="field">
+        <label>Number plate (last 4 digits)</label>
+        <div class="plate-wrap">
+          <span class="plate-prefix">LK –</span>
+          <input class="plate-input" id="plateInput" type="text" maxlength="4" placeholder="1234" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field" style="flex:0.7;min-width:130px">
+        <label>Week starting</label>
+        <input type="date" id="weekStart">
+      </div>
+      <button class="go-btn" onclick="compute()">Plan week</button>
+    </div>
+  </div>
+
+  <div id="result" class="hidden">
+    <div id="statusBanner" class="status-banner">
+      <div class="status-dot"></div>
+      <div>
+        <div class="status-text" id="statusText"></div>
+        <div class="status-sub" id="statusSub"></div>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-card">
+        <div class="lbl">Plate parity</div>
+        <div class="val" id="parityVal"></div>
+        <div class="val-sub" id="parityDays"></div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Weekly quota</div>
+        <div class="val" id="quotaVal">5 L</div>
+        <div class="val-sub" id="quotaVehicle">motorcycle</div>
+      </div>
+      <div class="info-card">
+        <div class="lbl">Fuel days</div>
+        <div class="val" id="fuelDaysCount"></div>
+        <div class="val-sub">this week</div>
+      </div>
+    </div>
+
+    <div class="quota-bar-wrap">
+      <div class="quota-label">Quota tracker</div>
+      <div class="quota-track"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div>
+      <div class="quota-nums">
+        <span id="usedLabel">0 L used</span>
+        <span>Quota: <strong id="quotaMax">5 L</strong></span>
+      </div>
+
+      <div class="balance-row">
+        <div class="bal-card">
+          <div class="bal-lbl">Quota</div>
+          <div class="bal-val" id="balQuota">5 L</div>
+        </div>
+        <div class="bal-card used">
+          <div class="bal-lbl">Pumped</div>
+          <div class="bal-val" id="balUsed">0 L</div>
+        </div>
+        <div class="bal-card remaining">
+          <div class="bal-lbl">Balance</div>
+          <div class="bal-val" id="balRemaining">5 L</div>
+        </div>
+      </div>
+
+      <div class="pump-row">
+        <div class="pump-field">
+          <label>Litres pumped this visit</label>
+          <div class="pump-input-wrap">
+            <input class="pump-input" id="pumpInput" type="number" min="0" step="0.5" placeholder="0.0">
+            <span class="pump-unit">L</span>
+          </div>
+        </div>
+        <button class="pump-btn" onclick="logPump()">Log fill</button>
+        <button class="pump-btn" style="background:transparent;color:var(--color-text-secondary);border-color:var(--color-border);" onclick="resetPump()">Reset</button>
+      </div>
+    </div>
+
+    <div class="week-nav">
+      <button class="nav-btn" onclick="shiftWeek(-1)">← prev</button>
+      <div class="week-nav-lbl" id="weekLabel"></div>
+      <button class="nav-btn" onclick="shiftWeek(1)">next →</button>
+    </div>
+    <div class="week-sub" id="weekSub"></div>
+
+    <div class="week-grid" id="weekGrid"></div>
+
+    <div class="notice">
+      <strong>Odd days</strong> (1,3,5,7,9): plates ending 1,3,5,7,9 &nbsp;·&nbsp;
+      <strong>Even days</strong> (0,2,4,6,8): plates ending 0,2,4,6,8<br>
+      Present your <strong>QR code</strong> (fuelpass.gov.lk) + NIC at every visit. Wednesday may have reduced station hours per govt circular.
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+let currentWeekStart=null,lastDigit=null;
+let selectedQuota=5,selectedVehicle='Motorcycles';
+let totalPumped=0;
+
+function updateQuotaDisplay(){
+  const remaining=Math.max(0,selectedQuota-totalPumped);
+  const pct=Math.min(100,Math.round((totalPumped/selectedQuota)*100));
+  document.getElementById('quotaFill').style.width=pct+'%';
+  document.getElementById('usedLabel').textContent=totalPumped.toFixed(1)+' L used';
+  document.getElementById('quotaMax').textContent=selectedQuota+' L';
+  document.getElementById('balQuota').textContent=selectedQuota+' L';
+  document.getElementById('balUsed').textContent=totalPumped.toFixed(1)+' L';
+  document.getElementById('balRemaining').textContent=remaining.toFixed(1)+' L';
+  const remCard=document.getElementById('balRemaining').parentElement;
+  remCard.classList.toggle('empty',remaining<=0);
+}
+
+function logPump(){
+  const val=parseFloat(document.getElementById('pumpInput').value);
+  if(isNaN(val)||val<=0){alert('Enter a valid amount.');return;}
+  const remaining=selectedQuota-totalPumped;
+  if(val>remaining){alert('Amount exceeds remaining balance of '+remaining.toFixed(1)+' L.');return;}
+  totalPumped=Math.round((totalPumped+val)*10)/10;
+  document.getElementById('pumpInput').value='';
+  updateQuotaDisplay();
+}
+
+function resetPump(){
+  totalPumped=0;
+  document.getElementById('pumpInput').value='';
+  updateQuotaDisplay();
+}
+
+function selectVehicle(el){
+  document.querySelectorAll('.v-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedQuota=parseInt(el.dataset.quota);
+  selectedVehicle=el.dataset.type;
+  totalPumped=0;
+  document.getElementById('quotaVal').textContent=selectedQuota+' L';
+  document.getElementById('quotaVehicle').textContent=selectedVehicle.toLowerCase();
+  updateQuotaDisplay();
+  if(currentWeekStart!==null&&lastDigit!==null)renderWeek(isEven(lastDigit));
+}
+
+function getMonday(d){
+  const dt=new Date(d);const day=dt.getDay();
+  const diff=dt.getDate()-(day===0?6:day-1);
+  dt.setDate(diff);dt.setHours(0,0,0,0);return dt;
+}
+function setDefaultDate(){
+  const mon=getMonday(new Date());
+  document.getElementById('weekStart').value=mon.toISOString().split('T')[0];
+}
+function isEven(n){return n%2===0}
+
+function compute(){
+  const raw=document.getElementById('plateInput').value.trim();
+  if(!raw||raw.length<1){alert('Enter the last digit(s) of your number plate.');return;}
+  lastDigit=parseInt(raw[raw.length-1]);
+  const wStartVal=document.getElementById('weekStart').value;
+  if(!wStartVal){alert('Pick a week start date.');return;}
+  currentWeekStart=new Date(wStartVal+'T00:00:00');
+  renderWeek(isEven(lastDigit));
+}
+
+function renderWeek(plateIsEven){
+  const today=new Date();today.setHours(0,0,0,0);
+  const ws=new Date(currentWeekStart);
+  const we=new Date(ws);we.setDate(we.getDate()+6);
+  document.getElementById('weekLabel').textContent=
+    DAYS[ws.getDay()]+' '+ws.getDate()+' '+MONTHS[ws.getMonth()]+' – '+
+    DAYS[we.getDay()]+' '+we.getDate()+' '+MONTHS[we.getMonth()]+' '+we.getFullYear();
+  document.getElementById('weekSub').textContent='7-day fuel window · plate ends in '+lastDigit+' · '+selectedVehicle;
+
+  document.getElementById('quotaVal').textContent=selectedQuota+' L';
+  document.getElementById('quotaVehicle').textContent=selectedVehicle.toLowerCase();
+
+  let fuelDays=0;
+  const grid=document.getElementById('weekGrid');grid.innerHTML='';
+  for(let i=0;i<7;i++){
+    const d=new Date(ws);d.setDate(d.getDate()+i);
+    const canFuel=(isEven(lastDigit)===isEven(d.getDate()));
+    const isToday=d.getTime()===today.getTime();
+    const isPast=d<today;
+    if(canFuel)fuelDays++;
+    const card=document.createElement('div');
+    card.className='day-card'+(canFuel?' active-fuel':'')+(isToday?' today-card':'')+(isPast&&!isToday?' past':'');
+    card.innerHTML=`<div class="day-name">${DAYS[d.getDay()]}</div>
+<div class="day-num">${d.getDate()}</div>
+${canFuel?'<div class="day-tag">FUEL</div>':''}
+${isToday?'<div class="today-label">today</div>':''}`;
+    grid.appendChild(card);
+  }
+  document.getElementById('fuelDaysCount').textContent=fuelDays+' days';
+  document.getElementById('parityVal').textContent=(plateIsEven?'Even':'Odd')+' ('+lastDigit+')';
+  document.getElementById('parityDays').textContent=plateIsEven?'fills on even dates':'fills on odd dates';
+  updateQuotaDisplay();
+
+  const todayInRange=today>=ws&&today<=we;
+  const banner=document.getElementById('statusBanner');
+  if(todayInRange){
+    const canToday=(plateIsEven===isEven(today.getDate()));
+    banner.className='status-banner '+(canToday?'can':'cannot');
+    document.getElementById('statusText').textContent=canToday?'You can fill up today':'Not your day today';
+    document.getElementById('statusSub').textContent=canToday?
+      'Today is '+today.getDate()+' ('+(isEven(today.getDate())?'even':'odd')+') — your plate qualifies. Carry your QR code.':
+      'Today is '+today.getDate()+' ('+(isEven(today.getDate())?'even':'odd')+') — next fuel day highlighted below.';
+  } else {
+    banner.className='status-banner wait';
+    document.getElementById('statusText').textContent='Viewing a future/past week';
+    document.getElementById('statusSub').textContent="Scroll to your current week to see today's status.";
+  }
+  document.getElementById('result').classList.remove('hidden');
+}
+
+function shiftWeek(dir){
+  if(!currentWeekStart)return;
+  currentWeekStart.setDate(currentWeekStart.getDate()+(dir*7));
+  renderWeek(isEven(lastDigit));
+}
+
+setDefaultDate();
+</script>
+</body>
+</html>
